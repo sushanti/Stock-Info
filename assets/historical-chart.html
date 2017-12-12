@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Bootstrap Example</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <!-- HighStocks(and Highcharts)-->
+    <script src="https://code.highcharts.com/stock/highstock.js"></script>
+
+    <!-- Export Module-->
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/offline-exporting.js"></script>
+
+    <!-- Moment js-->
+    <script src="https://momentjs.com/downloads/moment.js"> </script>
+    <script src="http://momentjs.com/downloads/moment-timezone.js"> </script>
+    <script src="https://momentjs.com/downloads/moment-timezone-with-data-2012-2022.js"> </script>
+</head>
+<body>
+
+
+<div class="container">
+    <div id="container"></div>
+</div>
+
+<script type="text/javascript">
+
+
+  function loadHistoricalCharts(symbol) {
+                        var apikey = "SEXTJPXWV94X65Q2";
+						var parameters={};
+						parameters.symbol = symbol;
+
+                        $.ajax({
+						    type:"GET",
+							data: parameters,
+							url: 'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol='+symbol+'&outputsize=full&apikey='+apikey,
+						}).done(function(response) {
+
+							loadHighStockChart(response);
+
+						}).fail(function(jqXHR, textStatus, errorThrown) {
+							console.log(errorThrown);
+						});
+        }
+
+	    function loadHighStockChart(data){
+
+					if(data && data["Time Series (Daily)"]){
+                        var timeSeries = data["Time Series (Daily)"];
+                        var dates = [];
+                        var price = [];
+						var stockData=[];
+                        var firstKey = Object.keys(timeSeries)[0];
+                        var keys = Object.keys(timeSeries[firstKey]);
+
+						var i=0;
+                        var chartTitle = data["Meta Data"]["2. Symbol"] +" Stock Value";
+
+                        for (var k in timeSeries) {
+						        if(i>=1000)
+								{
+								  break;
+								}
+								else{
+									var perDayData = [];
+									perDayData.push(moment(k,"YYYY-MM-DD").valueOf());
+									perDayData.push(parseFloat(timeSeries[k]["4. close"]));
+									stockData.push(perDayData);
+								}
+								i++;
+                        }
+                        stockData.sort();
+                        console.log(stockData);
+						// Create the chart
+						Highcharts.stockChart('container', {
+                            title: {
+								text: chartTitle
+							},
+                            subtitle: {
+								text: '<a class="subtitle" href="https://www.alphavantage.co/" target="blank">Source: Alpha Vantage</a>',
+								useHTML: true
+							},
+							tooltip: {
+								formatter: function () {
+									var s = Highcharts.dateFormat('%A, %b %e, %Y', this.x);
+
+									$.each(this.points, function () {
+										s += '<br/> <span style="color:#7CB5EC">\u25CF</span>' + data["Meta Data"]["2. Symbol"]+": <b>"+this.y+"</b>";
+									});
+
+									return s;
+								}
+							},
+							rangeSelector: {
+								buttons: [{
+									type: 'month',
+									count: 1,
+									text: '1m'
+								},{
+									type: 'month',
+									count: 3,
+									text: '3m'
+								}, {
+									type: 'month',
+									count: 6,
+									text: '6m'
+								},{
+									type: 'ytd',
+									count: 1,
+									text: 'YTD'
+								}, {
+									type: 'year',
+									count: 1,
+									text: '1y'
+								}, {
+									type: 'all',
+									text: 'All'
+								}],
+								selected: 0
+							},
+							series: [{
+								name: data["Meta Data"]["2. Symbol"],
+								type: 'area',
+								data: stockData,
+								tooltip: {
+									valueDecimals: 2
+								}
+							}]
+						});
+                    }
+
+					else{
+
+					}
+        }
+</script>
+</body>
+</html>

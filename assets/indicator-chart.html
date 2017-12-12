@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Bootstrap Example</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <!-- HighStocks(and Highcharts)-->
+    <script src="https://code.highcharts.com/stock/highstock.js"></script>
+
+    <!-- Export Module-->
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/offline-exporting.js"></script>
+
+    <!-- Moment js-->
+    <script src="https://momentjs.com/downloads/moment.js"> </script>
+    <script src="http://momentjs.com/downloads/moment-timezone.js"> </script>
+    <script src="https://momentjs.com/downloads/moment-timezone-with-data-2012-2022.js"> </script>
+</head>
+<body>
+
+
+<div class="container">
+    <div id="chart-container"></div>
+</div>
+
+<script type="text/javascript">
+
+        var options={};
+
+		function dateBeforeSixMonths(date) {
+            var olddate = new Date(date);
+            olddate.setMonth(olddate.getMonth() - 6);
+            return olddate;
+        }
+
+        function formatDate(date) {
+            var day = date.substring(8, 10);
+            var month = date.substring(5, 7);
+            var year = date.substring(0, 4);
+            return month + "/" + day + "/" + year;
+        }
+
+        function loadChartData(symbol,type){
+			var apikey = "SEXTJPXWV94X65Q2";
+			if(type.toUpperCase()==="PRICE"){
+			  $.ajax({
+					 type: "GET",
+					 url: 'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol='+symbol+'&outputsize=full&apikey='+apikey,
+					 success: function(response){
+						  loadPriceVolumeChart(response);
+					 },
+					 error: function (request, status, error) {
+						console.log(status);
+					 }
+
+				 });
+			}
+
+			else{
+			   $.ajax({
+					 type: "GET",
+					 url: 'https://www.alphavantage.co/query?function=' + type + '&symbol=' + symbol + '&interval=daily&time_period=10&series_type=close&apikey=' + apikey,
+					 success: function(response){
+						  loadIndicatorChart(type,response);
+					 },
+					 error: function (request, status, error) {
+						console.log(error);
+					 }
+
+				 });
+			}
+		}
+
+
+		function loadIndicatorChart(indicator,data) {
+
+                var technicalAnalysislabel = "Technical Analysis: " + indicator.toUpperCase();
+                var metadata = data["Meta Data"];
+                var technicalAnalysis = data[technicalAnalysislabel];
+                var dates = [];
+                var dataObject = [];
+                //var colors = ["#e00000", "#7cb5ec", "#000000", "#2f7ed8", "#0d233a"];
+                var j = 0;
+
+                var symbol = metadata["1: Symbol"];
+                var firstkey = Object.keys(technicalAnalysis)[0];
+                var keys = Object.keys(technicalAnalysis[firstkey]);
+
+                //Calculate first day of 6 months interval
+                var firstDay = dateBeforeSixMonths(firstkey);
+
+                for (var i in keys) {
+                    dataObject[i] = {
+                        name: keys.length > 1 ? symbol + " " + keys[i] : symbol,
+                        data: []
+                    }
+                }
+
+                //Populate Data
+                for (var k in technicalAnalysis) {
+                    var d = new Date(k);
+                    if (d >= firstDay) {
+                        var xdate = k.substring(5, 11);
+                        xdate = xdate.split('');
+                        xdate[2] = "/";
+                        xdate = xdate.join('');
+                        dates.push(xdate);
+                        for (i = 0; i < keys.length; i++) {
+                            dataObject[i].data.push(parseFloat(technicalAnalysis[k][keys[i]]));
+                        }
+                    }
+                }
+
+                while ((dates.length % 5) - 1 != 0) {
+                    dates.pop();
+                    for (i = 0; i < keys.length; i++) {
+                        dataObject[i].data.pop();
+                    }
+                }
+
+                options = {
+                    chart: {
+                        renderTo: 'chart-container',
+						zoomType: 'xy',
+                    },
+                    title: {
+                        text: metadata["2: Indicator"]
+                    },
+
+                    subtitle: {
+                        text: '<a class="subtitle" href="https://www.alphavantage.co/" target="blank">Source: Alpha Vantage</a>',
+                        useHTML: true
+                    },
+
+                    yAxis: {
+                        title: {
+                            text: "<b>" + indicator + "</b>"
+                        }
+                    },
+                    legend: {
+                        layout: 'vertical',
+                        align: 'right',
+                        verticalAlign: 'middle'
+                    },
+                    plotOptions: {
+                        series: {
+                            marker: {
+                                enabled: false,
+                                radius: 2
+                            },
+                            lineWidth: 1
+                        }
+                    },
+                    xAxis: {
+                        categories: dates,
+                        tickInterval: 5,
+                        reversed: true
+                    },
+                    series: dataObject,
+                    legend: {
+                        //layout: 'vertical',
+                        align: 'center' //,
+                            //verticalAlign: 'middle'
+                    },
+                    responsive: {
+                        rules: [{
+                            condition: {
+                                maxWidth: 500
+                            }
+                        }]
+                    },
+                    exporting: {
+                        enabled: true
+                    }
+                }
+
+                var chart1 = Highcharts.chart(options);
+
+
+
+
+        }
+
+		function loadPriceVolumeChart(data) {
+
+                var timeSeries = data["Time Series (Daily)"];
+                var dates = [];
+                var price = [];
+                var volume = [];
+
+                var firstKey = Object.keys(timeSeries)[0];
+                var keys = Object.keys(timeSeries[firstKey]);
+                var firstDay = dateBeforeSixMonths(firstKey);
+                var chartTitle = data["Meta Data"]["2. Symbol"]+" Stock Price and Volume";
+                var minPrice = timeSeries[firstKey]["4. close"];
+                var maxVolume = timeSeries[firstKey]["5. volume"];
+
+                for (var k in timeSeries) {
+                    var d = new Date(k);
+                    if (d >= firstDay) {
+                        var xdate = k.substring(5,11);
+                        xdate = xdate.split('');
+                        xdate[2] = "/";
+                        xdate = xdate.join('');
+
+                        dates.push(xdate);
+                        price.push(parseFloat(timeSeries[k]["4. close"]));
+                        volume.push(parseFloat(timeSeries[k]["5. volume"]));
+                        maxVolume = parseFloat(timeSeries[k]["5. volume"]) > maxVolume ? parseFloat(timeSeries[k]["5. volume"]) : maxVolume;
+
+                    }
+                }
+
+                while ((dates.length % 5) - 1 != 0) {
+                    dates.pop();
+                    price.pop();
+                    volume.pop();
+                }
+
+                options = {
+                    chart: {
+                        zoomType: 'xy',
+                        renderTo: 'chart-container'
+                    },
+                    title: {
+                        text: chartTitle,
+                    },
+                    subtitle: {
+                        text: '<a class="subtitle" href="https://www.alphavantage.co/" target="_blank">Source: Alpha Vantage</a>',
+                        useHTML: true
+                    },
+                    xAxis: [{
+                        categories: dates,
+                        crosshair: false,
+                        tickInterval: 5,
+                        reversed: true
+                    }],
+                    yAxis: [{
+                        title: {
+                            text: 'Volume',
+                            style: {
+                                color: Highcharts.getOptions().colors[1]
+                            }
+                        },
+                        labels: {
+                            style: {
+                                color: Highcharts.getOptions().colors[1]
+                            }
+                        },
+                        opposite: true
+
+                    }, {
+                        labels: {
+                            style: {
+                                color: Highcharts.getOptions().colors[1]
+                            }
+                        },
+                        title: {
+                            text: 'Stock Price',
+                            style: {
+                                color: Highcharts.getOptions().colors[1]
+                            }
+                        }
+                    }],
+                    tooltip: {
+                        shared: false
+                    },
+                    plotOptions: {
+                        area: {
+                            marker: {
+                                states: {
+                                    hover: {
+                                        enabled: true
+                                    }
+                                }
+                            }
+                        }
+                    },
+
+                    legend: {
+                        align: 'center',
+						colors: ['#0000ff','#ff1717']
+                    },
+                    series: [{
+                        yAxis: 1,
+                        name: 'Price',
+                        type: 'area',
+                        data: price,
+                        lineColor: '#0000ff',
+                        zIndex: 1,
+                        dataLabels: {
+                            overflow: "justify"
+                        },
+                        lineWidth: 1
+                    }, {
+                        name: "Volume",
+                        type: 'column',
+                        color: '#ff1717',
+                        data: volume,
+                        zIndex: 2,
+                        dataLabels: {
+                            overflow: "justify"
+                        }
+                    }],
+                    exporting: {
+                        enabled: true
+                    }
+                };
+
+                var chart1 = Highcharts.chart(options);
+        }
+
+        function getIndicatorChartOptions(indicator,data) {
+
+                var options={};
+                var technicalAnalysislabel = "Technical Analysis: " + indicator.toUpperCase();
+                var metadata = data["Meta Data"];
+                var technicalAnalysis = data[technicalAnalysislabel];
+                var dates = [];
+                var dataObject = [];
+                //var colors = ["#e00000", "#7cb5ec", "#000000", "#2f7ed8", "#0d233a"];
+                var j = 0;
+
+                var symbol = metadata["1: Symbol"];
+                var firstkey = Object.keys(technicalAnalysis)[0];
+                var keys = Object.keys(technicalAnalysis[firstkey]);
+
+                //Calculate first day of 6 months interval
+                var firstDay = dateBeforeSixMonths(firstkey);
+
+                for (var i in keys) {
+                    dataObject[i] = {
+                        name: keys.length > 1 ? symbol + " " + keys[i] : symbol,
+                        data: []
+                    }
+                }
+
+                //Populate Data
+                for (var k in technicalAnalysis) {
+                    var d = new Date(k);
+                    if (d >= firstDay) {
+                        var xdate = k.substring(5, 11);
+                        xdate = xdate.split('');
+                        xdate[2] = "/";
+                        xdate = xdate.join('');
+                        dates.push(xdate);
+                        for (i = 0; i < keys.length; i++) {
+                            dataObject[i].data.push(parseFloat(technicalAnalysis[k][keys[i]]));
+                        }
+                    }
+                }
+
+                while ((dates.length % 5) - 1 != 0) {
+                    dates.pop();
+                    for (i = 0; i < keys.length; i++) {
+                        dataObject[i].data.pop();
+                    }
+                }
+
+                options = {
+                    chart: {
+                        renderTo: 'chart-container',
+						zoomType: 'xy',
+                    },
+                    title: {
+                        text: metadata["2: Indicator"]
+                    },
+
+                    subtitle: {
+                        text: '<a class="subtitle" href="https://www.alphavantage.co/" target="blank">Source: Alpha Vantage</a>',
+                        useHTML: true
+                    },
+
+                    yAxis: {
+                        title: {
+                            text: "<b>" + indicator + "</b>"
+                        }
+                    },
+                    legend: {
+                        layout: 'vertical',
+                        align: 'right',
+                        verticalAlign: 'middle'
+                    },
+                    plotOptions: {
+                        series: {
+                            marker: {
+                                enabled: false,
+                                radius: 2
+                            },
+                            lineWidth: 1
+                        }
+                    },
+                    xAxis: {
+                        categories: dates,
+                        tickInterval: 5,
+                        reversed: true
+                    },
+                    series: dataObject,
+                    legend: {
+                        //layout: 'vertical',
+                        align: 'center' //,
+                            //verticalAlign: 'middle'
+                    },
+                    responsive: {
+                        rules: [{
+                            condition: {
+                                maxWidth: 500
+                            }
+                        }]
+                    },
+                    exporting: {
+                        enabled: true
+                    }
+                }
+
+                return options;
+
+        }
+
+
+
+		function getPriceVolumeChartOptions(data) {
+                var options={};
+                var timeSeries = data["Time Series (Daily)"];
+                var dates = [];
+                var price = [];
+                var volume = [];
+
+                var firstKey = Object.keys(timeSeries)[0];
+                var keys = Object.keys(timeSeries[firstKey]);
+                var firstDay = dateBeforeSixMonths(firstKey);
+                var chartTitle = data["Meta Data"]["2. Symbol"]+" Stock Price and Volume";
+                var minPrice = timeSeries[firstKey]["4. close"];
+                var maxVolume = timeSeries[firstKey]["5. volume"];
+
+                for (var k in timeSeries) {
+                    var d = new Date(k);
+                    if (d >= firstDay) {
+                        var xdate = k.substring(5,11);
+                        xdate = xdate.split('');
+                        xdate[2] = "/";
+                        xdate = xdate.join('');
+
+                        dates.push(xdate);
+                        price.push(parseFloat(timeSeries[k]["4. close"]));
+                        volume.push(parseFloat(timeSeries[k]["5. volume"]));
+                        maxVolume = parseFloat(timeSeries[k]["5. volume"]) > maxVolume ? parseFloat(timeSeries[k]["5. volume"]) : maxVolume;
+
+                    }
+                }
+
+                while ((dates.length % 5) - 1 != 0) {
+                    dates.pop();
+                    price.pop();
+                    volume.pop();
+                }
+
+                options = {
+                    chart: {
+                        zoomType: 'xy',
+                        renderTo: 'chart-container'
+                    },
+                    title: {
+                        text: chartTitle,
+                    },
+                    subtitle: {
+                        text: '<a class="subtitle" href="https://www.alphavantage.co/" target="_blank">Source: Alpha Vantage</a>',
+                        useHTML: true
+                    },
+                    xAxis: [{
+                        categories: dates,
+                        crosshair: false,
+                        tickInterval: 5,
+                        reversed: true
+                    }],
+                    yAxis: [{
+                        title: {
+                            text: 'Volume',
+                            style: {
+                                color: Highcharts.getOptions().colors[1]
+                            }
+                        },
+                        labels: {
+                            style: {
+                                color: Highcharts.getOptions().colors[1]
+                            }
+                        },
+                        opposite: true
+
+                    }, {
+                        labels: {
+                            style: {
+                                color: Highcharts.getOptions().colors[1]
+                            }
+                        },
+                        title: {
+                            text: 'Stock Price',
+                            style: {
+                                color: Highcharts.getOptions().colors[1]
+                            }
+                        }
+                    }],
+                    tooltip: {
+                        shared: false
+                    },
+                    plotOptions: {
+                        area: {
+                            marker: {
+                                states: {
+                                    hover: {
+                                        enabled: true
+                                    }
+                                }
+                            }
+                        }
+                    },
+
+                    legend: {
+                        align: 'center',
+						colors: ['#0000ff','#ff1717']
+                    },
+                    series: [{
+                        yAxis: 1,
+                        name: 'Price',
+                        type: 'area',
+                        data: price,
+                        lineColor: '#0000ff',
+                        zIndex: 1,
+                        dataLabels: {
+                            overflow: "justify"
+                        },
+                        lineWidth: 1
+                    }, {
+                        name: "Volume",
+                        type: 'column',
+                        color: '#ff1717',
+                        data: volume,
+                        zIndex: 2,
+                        dataLabels: {
+                            overflow: "justify"
+                        }
+                    }],
+                    exporting: {
+                        enabled: true
+                    }
+                };
+
+                return options;
+
+
+        }
+
+</script>
+</body>
+</html>

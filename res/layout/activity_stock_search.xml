@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/restaurant">
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="38dp"
+        android:text="Stock Market Search"
+        android:textColor="#FFF"
+        android:textSize="24sp" />
+
+    <AutoCompleteTextView
+        android:id="@+id/autoCompleteText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/textView"
+        android:layout_marginTop="25dp"
+        android:dropDownHeight="200dp"
+        android:textColor="#FFF"
+        android:inputType="textNoSuggestions"
+        />
+    <LinearLayout
+        android:id="@+id/ll_stockControls"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:weightSum="100"
+        android:layout_below="@+id/autoCompleteText"
+        android:orientation="horizontal"
+        android:layout_marginTop="20dp"
+        >
+    <TextView
+        android:id="@+id/tv_getQuote"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/autoCompleteText"
+        android:layout_weight="50"
+        android:onClick="getStockDetails"
+        android:text="Get Quote"
+        android:textColor="#4454b2"
+        android:gravity="center"
+        android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/tv_clear"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="50"
+            android:onClick="clearDetails"
+            android:text="Clear"
+            android:textColor="#4454b2"
+            android:textSize="20sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/ll_autorefresh"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:weightSum="100"
+        android:layout_below="@+id/ll_stockControls"
+        android:orientation="horizontal"
+        android:layout_marginTop="20dp"
+        >
+
+        <TextView
+            android:id="@+id/tv_favorites"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="30"
+            android:text="Favorites"
+            android:textColor="#FFF"
+            android:textSize="24sp" />
+
+
+        <Switch
+            android:id="@+id/switch_autorefresh"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="30"
+            android:text="AutoRefresh"
+            android:textColor="#FFF"
+            android:textSize="18sp" />
+
+        <ImageButton
+            android:id="@+id/ib_refresh"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="40"
+            android:background="@null"
+            app:srcCompat="@android:drawable/ic_popup_sync" />
+
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:id="@+id/ll_sort"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="100"
+        android:layout_below="@+id/ll_autorefresh"
+        android:layout_marginTop="20dp"
+        >
+
+
+        <Spinner
+            android:id="@+id/spinner_sortBy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="50" />
+
+
+
+        <Spinner
+            android:id="@+id/spinner_orderBy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="50"></Spinner>
+
+
+
+    </LinearLayout>
+
+
+
+
+    <ListView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/ll_sort"
+        android:layout_marginTop="20dp"
+        android:id="@+id/lv_favoriteList"
+        android:background="@android:color/white"
+       />
+
+    <ProgressBar
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/lv_favoriteList"
+        android:layout_centerInParent="true"
+        android:id="@+id/indi_favoriteList"
+        />
+
+
+
+
+</RelativeLayout>

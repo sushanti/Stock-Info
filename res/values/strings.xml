@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Stock Market</string>
+    <string name="title_activity_tabbed">TabbedActivity</string>
+    <string name="facebook_app_id">165995074144726</string>
+</resources>
